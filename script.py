@@ -2,56 +2,71 @@ import sys
 from collections import namedtuple
 
 # Consider eliminating first two fields (redundant)
-ExpenseStruct = namedtuple("Struct","name unit_price quanitity total_price who_paid")
+ExpenseStruct = namedtuple("Struct","name per_person_cost who_paid")
 
-def test():
-    return
+def hello_there():
+    print("Hello there, user. I am %s." % sys.argv[0])
 
-test = ExpenseStruct("things",4,1,4,"Joel/Erastus")
+def validate_args():
+    if len(sys.argv) < 2:
+        print("Name of data file must be supplied as argument. Killing self...")
+        exit()
 
-if len(sys.argv) < 2:
-    print("Input filename must be provided.")
+# Input: Open file object of expenses.csv file
+# Output: An array of the lines in the file
+def get_lines_from_file(file_object):
+    return file_object.read().split('\n')
 
-test = open(sys.argv[1])
-
-print(test)
-
-data_string = test.read()
-
-data_lines = []
-
-data_lines = data_string.split('\n') 
-data_organized = []
-
-i = 0
-for line in data_lines:
-    if i == 0:
-        i+=1
-        continue # skip first line
-    #sys.stdout.write(str(i) + ": " + line + '\n')
-    #i+=1
+def get_name_from_line_items(line_items):
+    return line_items[0]
     
-    line_data = line.split(',')
+def get_total_price_from_line_items(line_items):
+    return float(line_items[1]) * float(line_items[2])
 
-    data_organized.append(ExpenseStruct( \
-            line_data[0], \
-            line_data[1], \
-            line_data[2], \
-            float(line_data[1]) * float(line_data[2]), \
-            line_data[3].split('/')))
-    
-#print(len(data_organized) + " len of orgdata")
-who_paid_how_much = {}
-for item in data_organized:
-    split_n_ways = len(item.who_paid)
-    per_person_cost = item.total_price/split_n_ways
-    for who in item.who_paid:
-        if who not in who_paid_how_much:
-            who_paid_how_much[who] = 0
-        who_paid_how_much[who] += per_person_cost 
+def get_per_person_cost_from_line_items(line_items):
+    return get_total_price_from_line_items(line_items) /        \
+            len(get_who_paid_from_line_items(line_items))
+
+def get_who_paid_from_line_items(line_items):
+    return line_items[3].split('/')
+
+def get_expense_struct_from_csv_line(csv_line):
+    line_items = csv_line.split(',')
+    return ExpenseStruct(                                       \
+            get_name_from_line_items(line_items),               \
+            get_per_person_cost_from_line_items(line_items),    \
+            get_who_paid_from_line_items(line_items)            \
+            )
+
+def get_who_paid_how_much_from_file(file_object):
+    who_paid_how_much = {}
+    first_line = 1
+    for csv_line in get_lines_from_file(file_object):
+        if first_line == 1:
+            first_line = 0
+            continue
+        expense = get_expense_struct_from_csv_line(csv_line)
+        for person in expense.who_paid:
+            if person not in who_paid_how_much:
+               who_paid_how_much[person] = 0
+            who_paid_how_much[person] += expense.per_person_cost
+    return who_paid_how_much
 
 
-for person in who_paid_how_much:
-    print(person + " has paid " + str(who_paid_how_much[person]))
+def show_dictionary(d):
+    for item in d:
+        print(item + ": " + str(d[item]))
+
+def print_amount_paid_per_person(file_object):
+    show_dictionary(get_who_paid_how_much_from_file(file_object))
+
+def main():
+    hello_there()
+    validate_args()
+    file_object = open(sys.argv[1])
+    print_amount_paid_per_person(file_object)
+    file_object.close() 
 
 
+if __name__ == "__main__":
+    main()
