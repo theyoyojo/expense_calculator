@@ -21,7 +21,7 @@ def validate_args():
 # Input: An open file object of expenses.csv data file
 # Output: An array of the lines in the file
 def get_lines_from_file(file_object):
-    return file_object.read().split('\n')
+    return filter(None,file_object.read().split('\n'))
 
 # Input: An array of strings from row of data file
 # Output: The name of the expense
@@ -45,24 +45,30 @@ def get_who_paid_from_line_items(line_items):
     return line_items[3].split('/')
 
 # Input: A string of comma separated values from a row of the data file
+# Output: Silent if dispute field is empty, otherwise the dispute is reported
+def catch_dispute(line_items):
+    if line_items[4] != '':
+        print("Item \"" + line_items[0] + "\" disputed: " + line_items[4])
+
+# Input: A string of comma separated values from a row of the data file
 # Output: A struct containing data relevant data pertaining to a single expense
 def get_expense_struct_from_csv_line(csv_line):
     line_items = csv_line.split(',')
+    catch_dispute(line_items)
     return ExpenseStruct(                                       \
             get_name_from_line_items(line_items),               \
             get_per_person_cost_from_line_items(line_items),    \
-            get_who_paid_from_line_items(line_items)            \
-            )
+            get_who_paid_from_line_items(line_items))
 
 # Input: An open file object of expenses.csv data file
 # Output: An dictionary associating everyone mentioned in the data file to the
 #+the amount of shared expenses paid by that person
 def get_who_paid_how_much_from_file(file_object):
     who_paid_how_much = {}
-    first_line = 1
+    first_line = True
     for csv_line in get_lines_from_file(file_object):
-        if first_line == 1:
-            first_line = 0
+        if first_line == True:
+            first_line = False
             continue
         expense = get_expense_struct_from_csv_line(csv_line)
         for person in expense.who_paid:
@@ -83,7 +89,6 @@ def show_dictionary(d):
 #+stdout
 def print_amount_paid_per_person(file_object):
     show_dictionary(get_who_paid_how_much_from_file(file_object))
-
 
 # Entry point for program when run as a script
 def main():
