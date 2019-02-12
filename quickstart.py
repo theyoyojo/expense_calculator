@@ -1,3 +1,4 @@
+# Note: $ pip install --upgrade google-api-python-client 
 from __future__ import print_function
 import pickle
 import os.path
@@ -10,7 +11,9 @@ from IPython import embed
 SCOPES = ['https://www.googleapis.com/auth/spreadsheets.readonly']
 
 TEST_SHEET_ID = '1WV6Gkywyd3MOI6fmWbAwGH7fo2ozSFQLTFpkqJQ4Qxo'
-SECRET_API_KEY = 'LMAO_DONT_COMMIT_SECRET_KEYS'
+secret_keyfile = open("SECRET_SHH")
+SECRET_API_KEY = secret_keyfile.read().split('\n')[0] # If this does not work, that's just too bad
+print(SECRET_API_KEY)
 
 
 def get_values_from_public_sheet(sheetId,apiKey):
@@ -20,7 +23,7 @@ def get_values_from_public_sheet(sheetId,apiKey):
                 spreadsheetId=sheetId, \
                 includeGridData=True, \
                 fields='sheets/data/rowData/values/formattedValue') \
-                .execute()
+            .execute()
 
 def get_string_from_document(document,rowIndex,columnIndex):
     return document['sheets'][0]['data'][0] \
@@ -40,10 +43,23 @@ def main():
     document = get_values_from_public_sheet(TEST_SHEET_ID,SECRET_API_KEY)
     row2col2 = get_string_from_document_cell_reference(document,2,'B')
 
+    str_row = input("enter a row number >>> ")
+    str_col = input("enter a column letter >>> ")
+
+    if int(str_row) < 1:
+        print("Error: row must be greater than 1")
+        exit()
+    if ord(str_col[0]) < ord('A') or ord(str_col[0]) > ord('Z'):
+        print("Error: column must be a valid capital letter")
+
+    cell_row = int(str_row)
+    cell_col = str_col[0]
+
     #embed()
 
 
-    print("Value in 2B is: %s" % row2col2)
+    print("Value in %d%s is: %s" % (cell_row,cell_col,
+        get_string_from_document_cell_reference(document,cell_row,cell_col)))
 
 
 if __name__ == '__main__':
